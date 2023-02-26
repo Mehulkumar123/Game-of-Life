@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import random
 
 # constants
 CELL_SIZE = 20
@@ -7,6 +8,7 @@ GRID_WIDTH = 30
 GRID_HEIGHT = 20
 BG_COLOR = 'white'
 CELL_COLOR = 'black'
+CELL_SIZEGRID_WIDTH = GRID_WIDTH * CELL_SIZE
 
 # Cell class
 class Cell:
@@ -14,6 +16,7 @@ class Cell:
         self.x = x
         self.y = y
         self.state = 0
+        self.next_state = 0  # add next_state attribute to keep track of the next state
         self.rect = None
 
 # create the grid
@@ -92,61 +95,96 @@ def reset():
     cells = [[Cell(x, y) for y in range(GRID_HEIGHT)] for x in range(GRID_WIDTH)]
     for x in range(GRID_WIDTH):
         for y in range(GRID_HEIGHT):
-            canvas.itemconfig(cells[x][y].rect, fill=BG_COLOR)
-
-# apply a pattern to the grid
-def applyPattern(pattern):
-    reset()
-    x_offset = (GRID_WIDTH - pattern.width) // 2
-    y_offset = (GRID_HEIGHT - pattern.height) // 2
-    for x in range(pattern.width):
-        for y in range(pattern.height):
-            cell = cells[x+x_offset][y+y_offset]
-            if pattern.grid[y][x] == 1:
-                cell.state = 1
-                canvas.itemconfig(cell.rect, fill=CELL_COLOR)
-            else:
-                cell.state = 0
-                canvas.itemconfig(cell.rect, fill=BG_COLOR)
-
-# patterns = [
-# {'name': 'Glider', 'pattern': Pattern([[0, 1, 0], [0, 0, 1], [1, 1, 1]])},
-# {'name': 'Blinker', 'pattern': Pattern([[0, 1, 0], [0, 1, 0], [0, 1, 0]])},
-# {'name': 'Pulsar', 'pattern': Pattern([[0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],[1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],[1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],[1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],[0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],[0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],[1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],[1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],[1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],[0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0],])},]
-
-def resetGame():
-    global cells, begin_id
-    for x in range(GRID_WIDTH):
-        for y in range(GRID_HEIGHT):
             cell = cells[x][y]
             cell.state = 0
             cell.next_state = 0
             canvas.itemconfig(cell.rect, fill=BG_COLOR)
+    begin_id = None
+
+def addPattern(pattern):
+    global cells
+    x_offset, y_offset = (GRID_WIDTH // 2) - (len(pattern[0]) // 2), (GRID_HEIGHT // 2) - (len(pattern) // 2)
+    for y in range(len(pattern)):
+        for x in range(len(pattern[y])):
+            cells[x+x_offset][y+y_offset].state = pattern[y][x]
+            if pattern[y][x] == 0:
+                canvas.itemconfig(cells[x+x_offset][y+y_offset].rect, fill=BG_COLOR)
+            else:
+                canvas.itemconfig(cells[x+x_offset][y+y_offset].rect, fill=CELL_COLOR)
+# clear the canvas
+def clearCanvas():
+    global cells, begin_id
     canvas.after_cancel(begin_id)
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cells[x][y].state = 0
+            canvas.itemconfig(cells[x][y].rect, fill=BG_COLOR)
 
-# create the GUI
+# randomly fill the grid with cells
+def randomFill():
+    global cells
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cell = cells[x][y]
+            cell.state = random.choice([0, 1])
+            if cell.state == 0:
+                canvas.itemconfig(cell.rect, fill=BG_COLOR)
+            else:
+                canvas.itemconfig(cell.rect, fill=CELL_COLOR)
+
+# create the UI
 root = tk.Tk()
-root.title("Game of Life")
+root.title('Conway\'s Game of Life')
 
-# create the canvas
-canvas = tk.Canvas(root, width=GRID_WIDTH*CELL_SIZE, height=GRID_HEIGHT*CELL_SIZE, bg=BG_COLOR)
+canvas = tk.Canvas(root, width=CELL_SIZEGRID_WIDTH, height=GRID_HEIGHT*CELL_SIZE)
 canvas.pack()
 
-# create the grid and allow cell clicks
 createGrid(canvas)
-canvas.bind("<Button-1>", changeColor)
 
-# create the buttons
-button_frame = ttk.Frame(root)
-button_frame.pack(side=tk.BOTTOM, pady=10)
-start_button = ttk.Button(button_frame, text="Start", command=startGame)
+# add buttons
+frame = ttk.Frame(root)
+frame.pack(side=tk.BOTTOM)
+
+start_button = ttk.Button(frame, text='Start', command=startGame)
 start_button.pack(side=tk.LEFT, padx=5)
-pause_button = ttk.Button(button_frame, text="Pause", command=pauseGame)
+
+pause_button = ttk.Button(frame, text='Pause', command=pauseGame)
 pause_button.pack(side=tk.LEFT, padx=5)
-reset_button = ttk.Button(button_frame, text="Reset", command=resetGame)
+
+reset_button = ttk.Button(frame, text='Reset', command=reset)
 reset_button.pack(side=tk.LEFT, padx=5)
-exit_button = ttk.Button(button_frame, text="Exit", command=exitGame)
+
+clear_button = ttk.Button(frame, text='Clear', command=clearCanvas)
+clear_button.pack(side=tk.LEFT, padx=5)
+
+random_button = ttk.Button(frame, text='Random Fill', command=randomFill)
+random_button.pack(side=tk.LEFT, padx=5)
+
+exit_button = ttk.Button(frame, text='Exit', command=exitGame)
 exit_button.pack(side=tk.LEFT, padx=5)
 
-# run the GUI
+glider_pattern = [[0, 0, 1],
+[1, 0, 1],
+[0, 1, 1]]
+ttk.Button(root, text='Glider', command=lambda: addPattern(glider_pattern)).pack(side=tk.LEFT)
+
+lwss_pattern = [[0, 1, 0, 0, 1],
+[1, 0, 0, 0, 0],
+[1, 0, 0, 0, 1],
+[1, 1, 1, 1, 0]]
+ttk.Button(root, text='Lwss', command=lambda: addPattern(lwss_pattern)).pack(side=tk.LEFT)
+
+beacon_pattern = [[1, 1, 0, 0],
+[1, 1, 0, 0],
+[0, 0, 1, 1],
+[0, 0, 1, 1]]
+ttk.Button(root, text='Beacon', command=lambda: addPattern(beacon_pattern)).pack(side=tk.LEFT)
+
+toad_pattern = [[0, 0, 0, 0],
+[0, 1, 1, 1],
+[1, 1, 1, 0],
+[0, 0, 0, 0]]
+ttk.Button(root, text='Toad', command=lambda: addPattern(toad_pattern)).pack(side=tk.LEFT)
+
+# run the tkinter event loop
 root.mainloop()
