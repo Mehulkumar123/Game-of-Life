@@ -30,6 +30,9 @@ def createGrid(canvas):
                 fill=BG_COLOR, outline='gray'
             )
             cells[x][y].rect = rect
+            canvas.tag_bind(rect, '<Button-1>', changeColor)
+            canvas.tag_bind(rect, '<B1-Motion>', changeColor)
+
 
 # change the color of a cell when clicked
 def changeColor(event):
@@ -88,19 +91,6 @@ def pauseGame():
 def exitGame():
     root.destroy()
 
-# reset the game
-def reset():
-    global cells, begin_id
-    canvas.after_cancel(begin_id)
-    cells = [[Cell(x, y) for y in range(GRID_HEIGHT)] for x in range(GRID_WIDTH)]
-    for x in range(GRID_WIDTH):
-        for y in range(GRID_HEIGHT):
-            cell = cells[x][y]
-            cell.state = 0
-            cell.next_state = 0
-            canvas.itemconfig(cell.rect, fill=BG_COLOR)
-    begin_id = None
-
 def addPattern(pattern):
     global cells
     x_offset, y_offset = (GRID_WIDTH // 2) - (len(pattern[0]) // 2), (GRID_HEIGHT // 2) - (len(pattern) // 2)
@@ -151,9 +141,6 @@ start_button.pack(side=tk.LEFT, padx=5)
 pause_button = ttk.Button(frame, text='Pause', command=pauseGame)
 pause_button.pack(side=tk.LEFT, padx=5)
 
-reset_button = ttk.Button(frame, text='Reset', command=reset)
-reset_button.pack(side=tk.LEFT, padx=5)
-
 clear_button = ttk.Button(frame, text='Clear', command=clearCanvas)
 clear_button.pack(side=tk.LEFT, padx=5)
 
@@ -163,28 +150,60 @@ random_button.pack(side=tk.LEFT, padx=5)
 exit_button = ttk.Button(frame, text='Exit', command=exitGame)
 exit_button.pack(side=tk.LEFT, padx=5)
 
-glider_pattern = [[0, 0, 1],
-[1, 0, 1],
-[0, 1, 1]]
+glider_pattern = [
+    [0, 0, 1],
+    [1, 0, 1],
+    [0, 1, 1]
+]
 ttk.Button(root, text='Glider', command=lambda: addPattern(glider_pattern)).pack(side=tk.LEFT)
 
-lwss_pattern = [[0, 1, 0, 0, 1],
-[1, 0, 0, 0, 0],
-[1, 0, 0, 0, 1],
-[1, 1, 1, 1, 0]]
+lwss_pattern = [
+    [0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 0]
+]
 ttk.Button(root, text='Lwss', command=lambda: addPattern(lwss_pattern)).pack(side=tk.LEFT)
 
-beacon_pattern = [[1, 1, 0, 0],
-[1, 1, 0, 0],
-[0, 0, 1, 1],
-[0, 0, 1, 1]]
+beacon_pattern = [
+    [1, 1, 0, 0],
+    [1, 1, 0, 0],
+    [0, 0, 1, 1],
+    [0, 0, 1, 1]
+]
 ttk.Button(root, text='Beacon', command=lambda: addPattern(beacon_pattern)).pack(side=tk.LEFT)
 
-toad_pattern = [[0, 0, 0, 0],
-[0, 1, 1, 1],
-[1, 1, 1, 0],
-[0, 0, 0, 0]]
+toad_pattern = [
+    [0, 0, 0, 0],
+    [0, 1, 1, 1],
+    [1, 1, 1, 0],
+    [0, 0, 0, 0]
+]
 ttk.Button(root, text='Toad', command=lambda: addPattern(toad_pattern)).pack(side=tk.LEFT)
+
+blinker = [
+    [0, 0, 0],
+    [1, 1, 1],
+    [0, 0, 0]
+]
+ttk.Button(root, text='Blinker', command=lambda: addPattern(blinker)).pack(side=tk.LEFT)
+
+pulsar_pattern = [
+    [0,0,1,1,1,0,0,0,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,1,0,1,0,0,0,0,1],
+    [1,0,0,0,0,1,0,1,0,0,0,0,1],
+    [1,0,0,0,0,1,0,1,0,0,0,0,1],
+    [0,0,1,1,1,0,0,0,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,1,1,1,0,0,0,1,1,1,0,0],
+    [1,0,0,0,0,1,0,1,0,0,0,0,1],
+    [1,0,0,0,0,1,0,1,0,0,0,0,1],
+    [1,0,0,0,0,1,0,1,0,0,0,0,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,1,1,1,0,0,0,1,1,1,0,0],
+]
+ttk.Button(root, text='Pulsar', command=lambda: addPattern(pulsar_pattern)).pack(side=tk.LEFT)
 
 # run the tkinter event loop
 root.mainloop()
