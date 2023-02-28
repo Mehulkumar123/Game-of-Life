@@ -19,126 +19,136 @@ iteration = 0
 paused = False
 
 
-def init_cells():
-    """Initialize the grid of cells."""
+class Cell:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.alive = False
+        self.rect = None
+
+    def create_rect(self):
+        x0 = self.x * CELL_SIZE
+        y0 = self.y * CELL_SIZE
+        x1 = (self.x + 1) * CELL_SIZE
+        y1 = (self.y + 1) * CELL_SIZE
+        self.rect = canvas.create_rectangle(x0, y0, x1, y1, fill='white')
+
+    def change_colour(self):
+        self.alive = not self.alive
+        fill_colour = 'black' if self.alive else 'white'
+        canvas.itemconfig(self.rect, fill=fill_colour)
+
+    def change_state(self, neighbors):
+        count = sum([1 for n in neighbors if n.alive])
+        if self.alive:
+            if count < 2 or count > 3:
+                self.alive = False
+        else:
+            if count == 3:
+                self.alive = True
+
+
+def create_grid():
     global cells
-    cells = [[random.randint(0, 1) for y in range(GRID_HEIGHT)] for x in range(GRID_WIDTH)]
+    cells = [[Cell(x, y) for y in range(GRID_HEIGHT)] for x in range(GRID_WIDTH)]
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cells[x][y].create_rect()
 
 
-def draw_cells():
-    """Draw the current state of the grid."""
+def change_colour(event):
+    x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
+    cells[x][y].change_colour()
+
+
+def change_cell_state():
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            neighbors = [cells[(x+i) % GRID_WIDTH][(y+j) % GRID_HEIGHT] for i in (-1, 0, 1) for j in (-1, 0, 1) if not i == j == 0]
+            cells[x][y].change_state(neighbors)
+
+
+def start_game():
     global iteration
-    canvas.delete("all")
+    change_cell_state()
     for x in range(GRID_WIDTH):
         for y in range(GRID_HEIGHT):
-            if cells[x][y] == 1:
-                canvas.create_rectangle(x*CELL_SIZE, y*CELL_SIZE,
-                                        (x+1)*CELL_SIZE, (y+1)*CELL_SIZE,
-                                        fill="black")
-    canvas.create_text(50, GRID_HEIGHT*CELL_SIZE+10,
-                       text="Iteration {}".format(iteration))
+            fill_colour = 'black' if cells[x][y].alive else 'white'
+            canvas.itemconfig(cells[x][y].rect, fill=fill_colour)
+    canvas.create_text(50, GRID_HEIGHT*CELL_SIZE+10, text="Iteration {}".format(iteration))
     canvas.update()
-
-
-def count_neighbors(x, y):
-    """Count the number of live neighbors around the given cell."""
-    count = 0
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            if i == 0 and j == 0:
-                continue
-            if (x+i) < 0 or (x+i) >= GRID_WIDTH or (y+j) < 0 or (y+j) >= GRID_HEIGHT:
-                continue
-            count += cells[x+i][y+j]
-    return count
-
-
-def step():
-    """Compute the next state of the grid."""
-    global cells, iteration
-    new_cells = [[0 for y in range(GRID_HEIGHT)] for x in range(GRID_WIDTH)]
-    for x in range(GRID_WIDTH):
-        for y in range(GRID_HEIGHT):
-            count = count_neighbors(x, y)
-            if cells[x][y] == 1 and (count == 2 or count == 3):
-                new_cells[x][y] = 1
-            elif cells[x][y] == 0 and count == 3:
-                new_cells[x][y] = 1
-    cells = new_cells
     iteration += 1
-
-
-def run():
-    """Run the simulation."""
-    global paused
     if not paused:
-        step()
-        draw_cells()
-    root.after(1000 // SIMULATION_SPEED, run)
+        root.after(1000 // SIMULATION_SPEED, start_game)
 
 
-def pause():
-    """Pause or resume the simulation."""
+def pause_game():
     global paused
     paused = not paused
     if paused:
         pause_button.config(text="Resume")
     else:
         pause_button.config(text="Pause")
-        run()
+        start_game()
 
 
-def restart():
-    """Restart the simulation."""
+def exit_game():
+    root.destroy()
+
+
+def reset():
     global iteration, paused
     iteration = 0
     paused = False
-    init_cells()
-    draw_cells()
+    create_grid()
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cells[x][y].alive = False
+            fill_colour = 'white'
+            canvas.itemconfig(cells[x][y].rect, fill=fill_colour)
     pause_button.config(text="Pause")
 
 
-def change_speed(value):
-    """Change the speed of the simulation."""
-    global SIMULATION_SPEED
-    SIMULATION_SPEED = int(value)
+def create_live_cells():
+    live_cells = random.sample(range(GRID_WIDTH * GRID_HEIGHT), INITIAL_LIVE_CELLS)
+    for i in live_cells:
+        x, y = i % GRID_WIDTH, i // GRID_WIDTH
+        cells[x][y].alive = True
+        canvas.itemconfig(cells[x][y].rect, fill='black')
 
-def main():
-    """Initialize the GUI and start the simulation."""
-    global root, canvas, pause_button, restart_button, speed_scale
-    root = tk.Tk()
-    root.title("Game of Life")
 
-    canvas = tk.Canvas(root, width=GRID_WIDTH*CELL_SIZE,
-                       height=(GRID_HEIGHT*CELL_SIZE)+30)
-    canvas.pack()
+def create_widgets():
+    global pause_button, restart_button, speed_scale
+    pause_button = tk.Button(root, text="Pause", width=10, command=pause_game)
+    pause_button.grid(row=1, column=0, padx=10, pady=10)
 
-    # Add a button to pause/resume the simulation
-    pause_button = tk.Button(root, text="Pause", command=pause)
-    pause_button.pack(side=tk.LEFT)
+    restart_button = tk.Button(root, text="Restart", width=10, command=reset)
+    restart_button.grid(row=1, column=1, padx=10, pady=10)
 
-    # Add a button to restart the simulation
-    restart_button = tk.Button(root, text="Restart", command=restart)
-    restart_button.pack(side=tk.LEFT)
-
-    # Add a scale to control the simulation speed
-    speed_scale = tk.Scale(root, from_=1, to=20, orient=tk.HORIZONTAL,
-                           label="Speed", command=change_speed)
+    speed_scale = tk.Scale(root, from_=1, to=50, orient="horizontal", label="Speed",
+                           command=lambda x: set_speed(int(x)))
     speed_scale.set(SIMULATION_SPEED)
-    speed_scale.pack(side=tk.RIGHT)
+    speed_scale.grid(row=1, column=2, padx=10, pady=10)
 
-    # Initialize the grid of cells
-    init_cells()
 
-    # Draw the initial state of the grid
-    draw_cells()
+def set_speed(speed):
+    global SIMULATION_SPEED
+    SIMULATION_SPEED = speed
 
-    # Start the simulation
-    run()
 
-    # Start the GUI event loop
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title("Conway's Game of Life")
+
+    canvas = tk.Canvas(root, width=GRID_WIDTH * CELL_SIZE, height=GRID_HEIGHT * CELL_SIZE)
+    canvas.grid(row=0, column=0, columnspan=3)
+
+    create_grid()
+    create_live_cells()
+    create_widgets()
+
+    canvas.bind("<Button-1>", change_colour)
+
+    root.protocol("WM_DELETE_WINDOW", exit_game)
+    root.after(1000 // SIMULATION_SPEED, start_game)
     root.mainloop()
-
-
-if __name__ == "__main__":
-    main()
