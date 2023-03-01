@@ -1,35 +1,49 @@
 import tkinter as tk
 
-class CellGrid:
-    def __init__(self, master, rows, cols, size):
-        self.master = master
+class Cell:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.state = False
+
+class GridCell(tk.Canvas):
+    def __init__(self, master=None, cell=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.cell = cell
+        self.bind("<Button-1>", self.toggle_state)
+        self.draw()
+
+    def toggle_state(self, event):
+        self.cell.state = not self.cell.state
+        self.draw()
+
+    def draw(self):
+        if self.cell.state:
+            self.create_rectangle(0, 0, self.winfo_width(), self.winfo_height(), fill="black")
+        else:
+            self.delete("all")
+
+class Grid(tk.Frame):
+    def __init__(self, master=None, rows=10, cols=10, **kwargs):
+        super().__init__(master, **kwargs)
         self.rows = rows
         self.cols = cols
-        self.size = size
-        self.cells = [[0 for j in range(cols)] for i in range(rows)]
-        self.create_cells()
-
-    def create_cells(self):
-        for i in range(self.rows):
-            for j in range(self.cols):
-                cell = tk.Canvas(self.master, width=self.size, height=self.size, bg='white', highlightthickness=1, highlightbackground='gray')
-                cell.grid(row=i, column=j)
-                cell.bind('<Button-1>', lambda event, i=i, j=j: self.toggle_cell(i, j))
-
-    def toggle_cell(self, row, col):
-        cell = self.cells[row][col]
-        if cell == 0:
-            self.cells[row][col] = 1
-        else:
-            self.cells[row][col] = 0
-        self.update_cell(row, col)
-
-    def update_cell(self, row, col):
-        cell = self.cells[row][col]
-        color = 'white' if cell == 0 else 'black'
-        canvas = self.master.grid_slaves(row=row, column=col)[0]
-        canvas.configure(bg=color)
+        self.cells = [[Cell(i, j) for j in range(cols)] for i in range(rows)]
+        self.grid_cells = []
+        for row in range(rows):
+            row_cells = []
+            for col in range(cols):
+                cell = GridCell(self, cell=self.cells[row][col], width=20, height=20, bd=1, relief="raised")
+                cell.grid(row=row, column=col)
+                row_cells.append(cell)
+            self.grid_cells.append(row_cells)
 
 root = tk.Tk()
-grid = CellGrid(root, 10, 10, 30)
+cells = createGrid(10, 10)
+grid = Grid(root, rows=10, cols=10)
+grid.pack()
+
+start_button = tk.Button(root, text="Start", command=startGame)
+start_button.pack()
+
 root.mainloop()
