@@ -90,6 +90,17 @@ def pauseGame():
     global is_paused
     is_paused = True
 
+def exitGame():
+    root.destroy()
+
+def reset():
+    global is_paused
+    is_paused = True
+    for row in range(grid.rows):
+        for col in range(grid.cols):
+            grid.cells[row][col].state = False
+    grid.updateGrid()
+
 root = tk.Tk()
 cells = createGrid(10, 10)
 grid = Grid(root, rows=20, cols=20)
@@ -100,5 +111,11 @@ start_button.pack()
 
 pause_button = tk.Button(root, text="Pause", command=pauseGame)
 pause_button.pack()
+
+reset_button = tk.Button(root, text="Reset", command=reset)
+reset_button.pack()
+
+exit_button = tk.Button(root, text="Exit", command=exitGame)
+exit_button.pack()
 
 root.mainloop()
