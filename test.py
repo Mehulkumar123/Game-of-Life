@@ -1,5 +1,7 @@
 import tkinter as tk
 
+is_paused = False
+
 class Cell:
     def __init__(self, x, y):
         self.x = x
@@ -79,15 +81,24 @@ def createGrid(rows, cols):
     return cells
 
 def startGame():
-    grid.changeCellState()
-    root.after(1000, startGame)
+    global is_paused
+    if not is_paused:
+        grid.changeCellState()
+        root.after(1000, startGame)
+
+def pauseGame():
+    global is_paused
+    is_paused = True
 
 root = tk.Tk()
 cells = createGrid(10, 10)
-grid = Grid(root, rows=10, cols=10)
+grid = Grid(root, rows=20, cols=20)
 grid.pack()
 
 start_button = tk.Button(root, text="Start", command=startGame)
 start_button.pack()
+
+pause_button = tk.Button(root, text="Pause", command=pauseGame)
+pause_button.pack()
 
 root.mainloop()
