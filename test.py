@@ -5,6 +5,7 @@ class Cell:
         self.x = x
         self.y = y
         self.state = False
+        self.next_state = False
 
 class GridCell(tk.Canvas):
     def __init__(self, master=None, cell=None, **kwargs):
@@ -39,7 +40,6 @@ class Grid(tk.Frame):
             self.grid_cells.append(row_cells)
 
     def changeCellState(self):
-        new_cells = [[Cell(i, j) for j in range(self.cols)] for i in range(self.rows)]
         for row in range(self.rows):
             for col in range(self.cols):
                 live_neighbors = 0
@@ -53,11 +53,19 @@ class Grid(tk.Frame):
                             live_neighbors += 1
                 if self.cells[row][col].state:
                     if live_neighbors in [2, 3]:
-                        new_cells[row][col].state = True
+                        self.cells[row][col].next_state = True
+                    else:
+                        self.cells[row][col].next_state = False
                 else:
                     if live_neighbors == 3:
-                        new_cells[row][col].state = True
-        self.cells = new_cells
+                        self.cells[row][col].next_state = True
+                    else:
+                        self.cells[row][col].next_state = False
+
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self.cells[row][col].state = self.cells[row][col].next_state
+
         self.updateGrid()
 
     def updateGrid(self):
@@ -70,12 +78,16 @@ def createGrid(rows, cols):
     cells = [[Cell(i, j) for j in range(cols)] for i in range(rows)]
     return cells
 
+def startGame():
+    grid.changeCellState()
+    root.after(1000, startGame)
+
 root = tk.Tk()
 cells = createGrid(10, 10)
 grid = Grid(root, rows=10, cols=10)
 grid.pack()
 
-start_button = tk.Button(root, text="Start", command=grid.changeCellState)
+start_button = tk.Button(root, text="Start", command=startGame)
 start_button.pack()
 
 root.mainloop()
