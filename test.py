@@ -1,124 +1,154 @@
 import tkinter as tk
+from tkinter import ttk
 import random
 
+# constants
+CELL_SIZE = 20
+GRID_WIDTH = 30
+GRID_HEIGHT = 20
+BG_COLOR = 'white'
+CELL_COLOR = 'black'
+CELL_SIZEGRID_WIDTH = GRID_WIDTH * CELL_SIZE
+
+# Cell class
 class Cell:
-    def __init__(self, x, y, size, canvas):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.size = size
-        self.canvas = canvas
         self.state = 0
-        self.id = canvas.create_rectangle(x*size, y*size, (x+1)*size, (y+1)*size, fill='white')
-    
-    def toggle(self):
-        self.state = 1 - self.state
-        if self.state == 1:
-            self.canvas.itemconfig(self.id, fill='green')
-        else:
-            self.canvas.itemconfig(self.id, fill='white')
+        self.next_state = 0  # add next_state attribute to keep track of the next state
+        self.rect = None
 
-class GameOfLife:
-    def __init__(self, rows, cols, cell_size=10, game_speed=10):
-        self.rows = rows
-        self.cols = cols
-        self.cell_size = cell_size
-        self.game_speed = game_speed
-        
-        self.root = tk.Tk()
-        self.root.title("Conway's Game of Life")
-        
-        self.canvas = tk.Canvas(self.root, width=cols * cell_size, height=rows * cell_size)
-        self.canvas.pack()
-        
-        self.grid = [[Cell(i, j, cell_size, self.canvas) for j in range(cols)] for i in range(rows)]
-        
-        self.canvas.bind("<Button-1>", self.changeColour)
-        
-        self.start_button = tk.Button(self.root, text="Start", command=self.startGame)
-        self.start_button.pack(side=tk.LEFT)
-        self.pause_button = tk.Button(self.root, text="Pause", command=self.pauseGame)
-        self.pause_button.pack(side=tk.LEFT)
-        self.step_button = tk.Button(self.root, text="Step", command=self.stepGame)
-        self.step_button.pack(side=tk.LEFT)
-        
-        self.speed_slider = tk.Scale(self.root, from_=1, to=20, orient=tk.HORIZONTAL, label="Speed", command=self.setSpeed)
-        self.speed_slider.pack()
-        
-        self.begin_id = None
-        
-        self.randomizeGrid()
-        
-        self.root.mainloop()
-    
-    def changeColour(self, event):
-        x, y = event.x // self.cell_size, event.y // self.cell_size
-        self.grid[x][y].toggle()
+# create the grid
+def createGrid(canvas):
+    global cells
+    cells = [[Cell(x, y) for y in range(GRID_HEIGHT)] for x in range(GRID_WIDTH)]
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            rect = canvas.create_rectangle(
+                x*CELL_SIZE, y*CELL_SIZE, (x+1)*CELL_SIZE, (y+1)*CELL_SIZE,
+                fill=BG_COLOR, outline='gray'
+            )
+            cells[x][y].rect = rect
+            canvas.tag_bind(rect, '<Button-1>', changeColor)
+            canvas.tag_bind(rect, '<B1-Motion>', changeColor)
 
-    def changeCellState(self, x, y):
-        alive_neighbors = 0
-        for i in range(max(0, x-1), min(self.rows, x+2)):
-            for j in range(max(0, y-1), min(self.cols, y+2)):
-                if i == x and j == y:
-                    continue
-                alive_neighbors += self.grid[i][j].state
-        if self.grid[x][y].state == 1:
-            if alive_neighbors in (2, 3):
-                return 1
+
+# change the color of a cell when clicked
+def changeColor(event):
+    global cells
+    x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
+    cell = cells[x][y]
+    if cell.state == 0:
+        canvas.itemconfig(cell.rect, fill=CELL_COLOR)
+        cell.state = 1
+    else:
+        canvas.itemconfig(cell.rect, fill=BG_COLOR)
+        cell.state = 0
+
+# change the state of a cell based on its neighbors
+def changeCellState(cell):
+    global cells
+    x, y = cell.x, cell.y
+    neighbors = []
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            if i == 0 and j == 0:
+                continue
+            if x+i < 0 or x+i >= GRID_WIDTH or y+j < 0 or y+j >= GRID_HEIGHT:
+                continue
+            neighbors.append(cells[x+i][y+j])
+    live_neighbors = sum(n.state for n in neighbors)
+    if cell.state == 1 and (live_neighbors < 2 or live_neighbors > 3):
+        cell.next_state = 0
+    elif cell.state == 0 and live_neighbors == 3:
+        cell.next_state = 1
+    else:
+        cell.next_state = cell.state
+
+# advance the game by one iteration
+def startGame():
+    global cells, begin_id
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            changeCellState(cells[x][y])
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cell = cells[x][y]
+            cell.state = cell.next_state
+            if cell.state == 0:
+                canvas.itemconfig(cell.rect, fill=BG_COLOR)
             else:
-                return 0
-        else:
-            if alive_neighbors == 3:
-                return 1
+                canvas.itemconfig(cell.rect, fill=CELL_COLOR)
+    begin_id = canvas.after(100, startGame)
+
+# pause the game
+def pauseGame():
+    global begin_id
+    canvas.after_cancel(begin_id)
+
+# exit the game
+def exitGame():
+    root.destroy()
+
+def addPattern(pattern):
+    global cells
+    x_offset, y_offset = (GRID_WIDTH // 2) - (len(pattern[0]) // 2), (GRID_HEIGHT // 2) - (len(pattern) // 2)
+    for y in range(len(pattern)):
+        for x in range(len(pattern[y])):
+            cells[x+x_offset][y+y_offset].state = pattern[y][x]
+            if pattern[y][x] == 0:
+                canvas.itemconfig(cells[x+x_offset][y+y_offset].rect, fill=BG_COLOR)
             else:
-                return 0
-    
-    def startGame(self):
-        if self.begin_id is not None:
-            return
-        self.stepGame()
-        self.begin_id = self.root.after(int(1000 / self.game_speed), self.startGame)
-    
-    def pauseGame(self):
-        if self.begin_id is not None:
-            self.root.after_cancel(self.begin_id)
-            self.begin_id = None
-    
-    def stepGame(self):
-        next_state = [[0 for i in range(self.cols)] for j in range(self.rows)]
-        for i in range(self.rows):
-            for j in range(self.cols):
-                next_state[i][j] = self.changeCellState(i, j)
-        for i in range(self.rows):
-            for j in range(self.cols):
-                self.grid[i][j].state = next_state[i][j]
-                if self.grid[i][j].state == 1:
-                    self.canvas.itemconfig(self.grid[i][j].id, fill='green')
-                else:
-                    self.canvas.itemconfig(self.grid[i][j].id, fill='white')
+                canvas.itemconfig(cells[x+x_offset][y+y_offset].rect, fill=CELL_COLOR)
+# clear the canvas
+def clearCanvas():
+    global cells, begin_id
+    canvas.after_cancel(begin_id)
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cells[x][y].state = 0
+            canvas.itemconfig(cells[x][y].rect, fill=BG_COLOR)
 
-    def randomizeGrid(self):
-        for i in range(self.rows):
-            for j in range(self.cols):
-                if random.random() < 0.5:
-                    self.grid[i][j].state = 1
-                    self.grid[i][j].canvas.itemconfig(self.grid[i][j].id, fill='green')
+# randomly fill the grid with cells
+def randomFill():
+    global cells
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            cell = cells[x][y]
+            cell.state = random.choice([0, 1])
+            if cell.state == 0:
+                canvas.itemconfig(cell.rect, fill=BG_COLOR)
+            else:
+                canvas.itemconfig(cell.rect, fill=CELL_COLOR)
 
-    
-    def randomizeGrid(self):
-        for i in range(self.rows):
-            for j in range(self.cols):
-                r = random.randint(0, 1)
-                self.grid[i][j].state = r
-                if r == 1:
-                    self.canvas.itemconfig(self.grid[i][j].id, fill='green')
-                else:
-                    self.canvas.itemconfig(self.grid[i][j].id, fill='white')
-    
-    def setSpeed(self, val):
-        self.game_speed = int(val)
-        if self.begin_id is not None:
-            self.pauseGame()
-            self.startGame()
+# create the UI
+root = tk.Tk()
+root.title('Conway\'s Game of Life')
 
-if __name__ == '__main__':
-    game = GameOfLife(50, 50)
+canvas = tk.Canvas(root, width=CELL_SIZEGRID_WIDTH, height=GRID_HEIGHT*CELL_SIZE)
+canvas.pack()
+
+createGrid(canvas)
+
+# add buttons
+frame = ttk.Frame(root)
+frame.pack(side=tk.BOTTOM)
+
+start_button = ttk.Button(frame, text='Start', command=startGame)
+start_button.pack(side=tk.LEFT, padx=5)
+
+pause_button = ttk.Button(frame, text='Pause', command=pauseGame)
+pause_button.pack(side=tk.LEFT, padx=5)
+
+clear_button = ttk.Button(frame, text='Clear', command=clearCanvas)
+clear_button.pack(side=tk.LEFT, padx=5)
+
+random_button = ttk.Button(frame, text='Random Fill', command=randomFill)
+random_button.pack(side=tk.LEFT, padx=5)
+
+exit_button = ttk.Button(frame, text='Exit', command=exitGame)
+exit_button.pack(side=tk.LEFT, padx=5)
+
+# run the tkinter event loop
+root.mainloop()
