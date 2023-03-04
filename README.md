@@ -5,7 +5,7 @@ This code implements Conway's Game of Life, a cellular automaton that simulates 
 The program uses the Tkinter library to create a graphical user interface that displays the game board and allows the user to interact with it. The board is represented by a two-dimensional list called grid, where each element is either a 0 (dead cell) or 1 (alive cell).
 
 The rules of the game are applied to each cell on the grid during each iteration of the game. The count_neighbors function counts the number of living neighbors around each cell, and the update function updates the grid based on the rules:
-|                                                       |
+| ----------- | ----------- |
 Any live cell with two or three live neighbors survives.
 Any dead cell with three live neighbors becomes a live cell.
 All other live cells die in the next generation. Similarly, all other dead cells stay dead.
