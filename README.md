@@ -18,7 +18,7 @@ The run function uses the after method to run the game loop at a set framerate, 
 
 
 ## Installation
-- Clone this repository to your local machine using git clone [https://github.com/your-username/conways-game-of-life.git](https://github.com/Mehulkumar123/Game-of-Life)
+- Clone this repository to your local machine using git clone [https://github.com/Mehulkumar123/Game-of-Life]
 - Install the required dependencies
 
 ## Plugin
