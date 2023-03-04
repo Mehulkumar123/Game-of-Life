@@ -44,4 +44,4 @@ Some ways you can contribute include:
 - Improving documentation and comments
 - Adding test cases and improving test coverage
 
-![CodeCodingGIF](https://user-images.githubusercontent.com/84561537/222923201-0e2697cb-6448-465e-9340-648a0422a6b4.gif)
+![ScalerCreateImpactGIF](https://user-images.githubusercontent.com/84561537/222923499-070cfc78-3858-42ba-9c1f-461bc96c6b19.gif)
