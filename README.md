@@ -21,11 +21,12 @@ The run function uses the after method to run the game loop at a set framerate, 
 - Clone this repository to your local machine using git clone [https://github.com/Mehulkumar123/Game-of-Life]
 - Install the required dependencies
 
-## Plugin
+## Plugin Used in the Project
 | Plugin | LINKS |
 | ------ | ------ |
 | Tkinter | [https://docs.python.org/3/library/tkinter.html] |
-
+| Stackoverflow | [https://stackoverflow.com] |
+| Original Code | [https://www.youtube.com/watch?v=dQw4w9WgXcQ] |
 ## Usage
 - Run the conways_game_of_life.py file using python conways_game_of_life.py
 - Use the mouse to draw cells on the canvas or click the "Randomize" button to generate a random pattern
@@ -42,3 +43,5 @@ Some ways you can contribute include:
 - Fixing bugs or improving existing code
 - Improving documentation and comments
 - Adding test cases and improving test coverage
+
+![CodeCodingGIF](https://user-images.githubusercontent.com/84561537/222923201-0e2697cb-6448-465e-9340-648a0422a6b4.gif)
