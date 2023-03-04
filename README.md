@@ -21,7 +21,7 @@ The run function uses the after method to run the game loop at a set framerate, 
 - Clone this repository to your local machine using git clone [https://github.com/Mehulkumar123/Game-of-Life]
 - Install the required dependencies
 
-## Plugin Used in the Project
+## Used in the Project
 | Plugin | LINKS |
 | ------ | ------ |
 | Tkinter | [https://docs.python.org/3/library/tkinter.html] |
